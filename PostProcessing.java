@@ -56,51 +56,50 @@ import deepimagej.processing.PostProcessingInterface;
 
 
 public class PostProcessing implements PostProcessingInterface {
-	/**
-	 * Dictionary containing all the parameters parsed from the file
-	 */
-	private static HashMap<String, String> CONFIG = new HashMap<String, String>();
-	/**
-	 * Path to the other pre-processing file provided in deepImageJ. If it contains 
-	 * either a .ijm or .txt file it will be parsed to find parameters
-	 */
-	private static String CONFIG_FILE_PATH;
-	/**
-	 * Attribute to communicate errors to DeepImageJ plugins
-	 */
-	private static String ERROR = "";
-	/**
-	 * Return error that stopped pre-processing to DeepImageJ
-	 */
-	@Override
-	public String error() {
-		return ERROR;
-	}
-	
-	/**
-	 * This method does the equivalent to unmold_detections at:
-	 * https://github.com/matterport/Mask_RCNN/blob/3deaec5d902d16e1daf56b62d5971d428dc920bc/mrcnn/model.py#L2417
-	 * 
-	 * 
-	 * Method containing the whole Java post-processing routine. 
-	 * @param map: outputs to be post-processed. It is provided by deepImageJ. The keys
-	 * correspond to name given by the model to the outputs. And the values are the images and 
-	 * ResultsTables outputes by the model.
-	 * @return this method has to return a HashMap with the post-processing results.
-	 */
+    /**
+     * Dictionary containing all the parameters parsed from the file
+     */
+    private static HashMap<String, String> CONFIG = new HashMap<String, String>();
+    /**
+     * Path to the other pre-processing file provided in deepImageJ. If it contains 
+     * either a .ijm or .txt file it will be parsed to find parameters
+     */
+    private static String CONFIG_FILE_PATH;
+    /**
+     * Attribute to communicate errors to DeepImageJ plugins
+     */
+    private static String ERROR = "";
+    /**
+     * Return error that stopped pre-processing to DeepImageJ
+     */
+    @Override
+    public String error() {
+        return ERROR;
+    }
+    
+    /**
+     * This method does the equivalent to unmold_detections at:
+     * https://github.com/matterport/Mask_RCNN/blob/3deaec5d902d16e1daf56b62d5971d428dc920bc/mrcnn/model.py#L2417
+     * 
+     * 
+     * Method containing the whole Java post-processing routine. 
+     * @param map: outputs to be post-processed. It is provided by deepImageJ. The keys
+     * correspond to name given by the model to the outputs. And the values are the images and 
+     * ResultsTables outputes by the model.
+     * @return this method has to return a HashMap with the post-processing results.
+     */
     public HashMap<String, Object> deepimagejPostprocessing(final HashMap<String, Object> map) {
         final Set<String> keys = map.keySet();
         ImagePlus mask = null;
         ResultsTable detections = null;
         String name = "";
-     	//Different types of colors we will paint 
-    	ArrayList<Color> colors = new ArrayList<Color>();
-    	colors.add(null);
-    	colors.add(Color.YELLOW);
-    	colors.add(Color.BLUE);
-    	colors.add(Color.CYAN);
-    	colors.add(Color.GREEN);
-    	
+        //Different types of colors we will paint 
+        ArrayList<Color> colors = new ArrayList<Color>();
+        colors.add(Color.YELLOW);
+        colors.add(Color.BLUE);
+        colors.add(Color.CYAN);
+        colors.add(Color.GREEN);
+        
         for (final String k : keys) {
             if (k.equals(CONFIG.get("MRCNN_MASK"))) {
                 mask = (ImagePlus) map.get(k);
@@ -112,15 +111,15 @@ public class PostProcessing implements PostProcessingInterface {
                 detections = (ResultsTable) map.get(k);
             }
             if(k.equals(CONFIG.get("NAME")))
-            	name = (String) map.get(k);
+                name = (String) map.get(k);
         }
         
         // Get the number of objects detected by the net
         final int nDetections = getNDetections(detections);
         // If nothing was detected just return null
         if (nDetections == 0) {
-        	ERROR = "No object was detected in the input image.";
-        	return null;
+            ERROR = "No object was detected in the input image.";
+            return null;
         }
         // Get the detected bounding boxes from the output table in normalized coordinates
         final double[][] boxes = new double[nDetections][4];
@@ -139,10 +138,10 @@ public class PostProcessing implements PostProcessingInterface {
         //Get the different classes and save them in array of integers
         final ArrayList<Integer> differentClassIds = new ArrayList<Integer>();
         for(int i = 0; i<classIds.length; i++) {
-        	int cId = classIds[i];
-			if(!differentClassIds.contains(cId)) {
-				differentClassIds.add(cId);
-			}
+            int cId = classIds[i];
+            if(!differentClassIds.contains(cId)) {
+                differentClassIds.add(cId);
+            }
         }
         
 
@@ -172,7 +171,7 @@ public class PostProcessing implements PostProcessingInterface {
         ArrayList<ImagePlus> finalDifferentMasks = new ArrayList<ImagePlus>();
         finalDifferentMasks.add(0, null);
         for(int i=0; i<differentClassIds.size(); i++) {
-        	finalDifferentMasks.add(differentClassIds.get(i), IJ.createHyperStack(String.valueOf(differentClassIds.get(i)), (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, 1, 1, 32));
+            finalDifferentMasks.add(differentClassIds.get(i), IJ.createHyperStack(String.valueOf(differentClassIds.get(i)), (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, 1, 1, 32));
         }
         //final ImagePlus finalMasks = IJ.createHyperStack("Celulas", (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, nClasses, 1, 32);
         
@@ -180,15 +179,15 @@ public class PostProcessing implements PostProcessingInterface {
         window = normBoxes(window, processingShape);
         float[] shift = {window[0], window[1], window[0], window[1]};
         // Window height
-        float wh = window[2] - window[0];			
+        float wh = window[2] - window[0];           
         // Window width
-        float ww = window[3] - window[1];			
+        float ww = window[3] - window[1];           
         float[] scale = {wh, ww, wh, ww};
         // Convert boxes to pixel coordinates of the original image
         for (int i = 0; i < boxes.length; i ++) {
-        	for (int j = 0; j < boxes[0].length; j ++) {
-        		boxes[i][j] = (boxes[i][j] - shift[j]) / scale[j];
-        	}
+            for (int j = 0; j < boxes[0].length; j ++) {
+                boxes[i][j] = (boxes[i][j] - shift[j]) / scale[j];
+            }
         }
         // Set the interpolation method
         selectedMasks.getProcessor().setInterpolationMethod(2);
@@ -224,14 +223,14 @@ public class PostProcessing implements PostProcessingInterface {
         final HashMap<String, Object> outMap = new HashMap<String, Object>();
         //finalMasks.show();
         for(int i=1; i<finalDifferentMasks.size(); i++) {
-        	//Change colors
-        	finalDifferentMasks.get(i).setLut(LUT.createLutFromColor(colors.get(i)));
-        	finalDifferentMasks.get(i).updateAndDraw();
-        	//set title in the window
-        	if(i==1)
-        		finalDifferentMasks.get(i).setTitle("Celulas");
-        	finalDifferentMasks.get(i).show();
-        	outMap.put(finalDifferentMasks.get(i).getTitle(), finalDifferentMasks.get(i));
+            //Change colors
+            finalDifferentMasks.get(i).setLut(LUT.createLutFromColor(colors.get(i%colors.size())));
+            finalDifferentMasks.get(i).updateAndDraw();
+            //set title in the window
+            if(i==1)
+                finalDifferentMasks.get(i).setTitle("Celulas");
+            finalDifferentMasks.get(i).show();
+            outMap.put(finalDifferentMasks.get(i).getTitle(), finalDifferentMasks.get(i));
         }
         
         //selectedMasks.show();
@@ -242,38 +241,38 @@ public class PostProcessing implements PostProcessingInterface {
     }
 
     /**
-	 * Auxiliary method to be able to change some post-processing parameters without
-	 * having to change the code. DeepImageJ gives the option of providing a extra
-	 * files in the post-processing which can be used for example as config files.
-	 * It can act as a config file because the needed parameters can be specified in
-	 * a comment block and the parsed by the post-processing method
-	 * @param configFiles: list of attachments. The files used by the post-processing
-	 * can then be selected by the name 
-	 */
+     * Auxiliary method to be able to change some post-processing parameters without
+     * having to change the code. DeepImageJ gives the option of providing a extra
+     * files in the post-processing which can be used for example as config files.
+     * It can act as a config file because the needed parameters can be specified in
+     * a comment block and the parsed by the post-processing method
+     * @param configFiles: list of attachments. The files used by the post-processing
+     * can then be selected by the name 
+     */
     public void setConfigFiles(ArrayList<String> configFiles) {
-	    	for (String ff : configFiles) {
-	    		String fileName = ff.substring(ff.lastIndexOf(File.separator) + 1);
-	    		if (fileName.contentEquals("config.ijm")) {
-	    	    	CONFIG_FILE_PATH = ff;
-	    	    	break;
-	    		}
-	    	}
-	    	if (CONFIG_FILE_PATH == null && configFiles.size() == 0) {
-	    		ERROR = "No parameters file or config file provided for post-processing.";
-	    		return;
-	    	} else if (CONFIG_FILE_PATH == null && configFiles.size() > 0) {
-	    		ERROR = "A configuration file was not found in the model. The configuration file"
-	    				+ "should be called 'config.ijm', please rename the config file if it is "
-	    				+ "not named correctly.";
-	    		return;
-	    	} else if (!(new File(CONFIG_FILE_PATH).exists())) {
-	    		ERROR = "The configuration file provided during post-processing does not exist.";
-	    		return;
-	    	}
-	    	// Parse parameters from the config file
-	    	// Parameters are saved in the HashMap 'config'
-	    	getParameters(CONFIG_FILE_PATH);
-	    }
+            for (String ff : configFiles) {
+                String fileName = ff.substring(ff.lastIndexOf(File.separator) + 1);
+                if (fileName.contentEquals("config.ijm")) {
+                    CONFIG_FILE_PATH = ff;
+                    break;
+                }
+            }
+            if (CONFIG_FILE_PATH == null && configFiles.size() == 0) {
+                ERROR = "No parameters file or config file provided for post-processing.";
+                return;
+            } else if (CONFIG_FILE_PATH == null && configFiles.size() > 0) {
+                ERROR = "A configuration file was not found in the model. The configuration file"
+                        + "should be called 'config.ijm', please rename the config file if it is "
+                        + "not named correctly.";
+                return;
+            } else if (!(new File(CONFIG_FILE_PATH).exists())) {
+                ERROR = "The configuration file provided during post-processing does not exist.";
+                return;
+            }
+            // Parse parameters from the config file
+            // Parameters are saved in the HashMap 'config'
+            getParameters(CONFIG_FILE_PATH);
+        }
     
     /**
      * Parse parameters from a file provided in the plugin.
@@ -286,35 +285,35 @@ public class PostProcessing implements PostProcessingInterface {
      * @param parametersFile: file containing parameters needed for post-processing provided in the plugin
      */
     public void getParameters(String parametersFile) {
-    	// Initialise the parameters dictionary
-    	CONFIG = new HashMap<String, String>();
-    	File configFile = new File(parametersFile);
-    	// Key that is used to know where is each parameter
-    	String flag = "PARAMETER:";
-    	String flag2 = "*";
-    	String separator = "=";
-    	// Read the file line by line
-    	try (BufferedReader br = new BufferedReader(new FileReader(configFile))) {
-    	    String line = br.readLine().trim();
-    	    while (line != null) {
-    	    	line = line.trim();
-    	       if (line.contains(flag) && line.contains(flag2) && !line.contains("'" + flag + "'")) {
-    	    	   int paramStart = line.indexOf(flag) + flag.length();
-    	    	   int separatorInd = line.indexOf(separator);
-    	    	   // Parameter key and value are separated by '='
-    	    	   String key = line.substring(paramStart, separatorInd).trim();
-    	    	   String value = line.substring(separatorInd + 1).trim();
-    	    	   CONFIG.put(key, value);
-    	       }
-    	       line = br.readLine();
-    	    }
-    	    br.close();
-    	} catch (IOException e) {
-			ERROR = "Could not access the config file provided during pre-preocessing:\n"
-					+ "- " + parametersFile;
-			e.printStackTrace();
-			CONFIG = null;
-		}
+        // Initialise the parameters dictionary
+        CONFIG = new HashMap<String, String>();
+        File configFile = new File(parametersFile);
+        // Key that is used to know where is each parameter
+        String flag = "PARAMETER:";
+        String flag2 = "*";
+        String separator = "=";
+        // Read the file line by line
+        try (BufferedReader br = new BufferedReader(new FileReader(configFile))) {
+            String line = br.readLine().trim();
+            while (line != null) {
+                line = line.trim();
+               if (line.contains(flag) && line.contains(flag2) && !line.contains("'" + flag + "'")) {
+                   int paramStart = line.indexOf(flag) + flag.length();
+                   int separatorInd = line.indexOf(separator);
+                   // Parameter key and value are separated by '='
+                   String key = line.substring(paramStart, separatorInd).trim();
+                   String value = line.substring(separatorInd + 1).trim();
+                   CONFIG.put(key, value);
+               }
+               line = br.readLine();
+            }
+            br.close();
+        } catch (IOException e) {
+            ERROR = "Could not access the config file provided during pre-preocessing:\n"
+                    + "- " + parametersFile;
+            e.printStackTrace();
+            CONFIG = null;
+        }
     }
     
     /**
@@ -343,14 +342,14 @@ public class PostProcessing implements PostProcessingInterface {
      * @return box normalized coordinates as [y1, x1, y2, x2]
      */
     private static float[] normBoxes(float[] window, float[] imageShape) {
-    	float h = imageShape[0];
-    	float w = imageShape[1];
-    	float[] scale = {h - 1, w - 1, h - 1, w - 1}; 
-    	float[] shift = {0, 0, 1, 1}; 
-    	float[] normBox = new float[scale.length];
-    	for (int i = 0; i < normBox.length; i ++)
-    		normBox[i] = (window[i] - shift[i]) / scale[i];
-    	return normBox;
+        float h = imageShape[0];
+        float w = imageShape[1];
+        float[] scale = {h - 1, w - 1, h - 1, w - 1}; 
+        float[] shift = {0, 0, 1, 1}; 
+        float[] normBox = new float[scale.length];
+        for (int i = 0; i < normBox.length; i ++)
+            normBox[i] = (window[i] - shift[i]) / scale[i];
+        return normBox;
     }
     
     /**
@@ -384,25 +383,25 @@ public class PostProcessing implements PostProcessingInterface {
      * @return float array or null in the case it was not possible
      */
     public static float[] str2array(String str) {
-    	try {
-	    	if (str.indexOf("[") != -1)
-	    		str = str.substring(str.indexOf("[") + 1);
-	    	else if (str.indexOf("(") != -1)
-	    		str = str.substring(str.indexOf("(") + 1);
-	
-	    	if (str.indexOf("]") != -1)
-	    		str = str.substring(0, str.indexOf("]"));
-	    	else if (str.indexOf(")") != -1)
-	    		str = str.substring(0, str.indexOf(")"));
-	    	
-	    	String[] strArr = str.split(",");
-	    	float[] arr = new float[strArr.length];
-	    	for (int i = 0; i < strArr.length; i ++) {
-	    		arr[i] = Float.parseFloat(strArr[i]);
-	    	}
-	    	return arr;
-    	} catch (Exception ex){
-    		return null;
-    	}
+        try {
+            if (str.indexOf("[") != -1)
+                str = str.substring(str.indexOf("[") + 1);
+            else if (str.indexOf("(") != -1)
+                str = str.substring(str.indexOf("(") + 1);
+    
+            if (str.indexOf("]") != -1)
+                str = str.substring(0, str.indexOf("]"));
+            else if (str.indexOf(")") != -1)
+                str = str.substring(0, str.indexOf(")"));
+            
+            String[] strArr = str.split(",");
+            float[] arr = new float[strArr.length];
+            for (int i = 0; i < strArr.length; i ++) {
+                arr[i] = Float.parseFloat(strArr[i]);
+            }
+            return arr;
+        } catch (Exception ex){
+            return null;
+        }
     }
 }
