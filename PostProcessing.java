@@ -51,6 +51,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import deepimagej.processing.PostProcessingInterface;
 
@@ -169,11 +170,14 @@ public class PostProcessing implements PostProcessingInterface {
         
         //for each class create hyper stack
         ArrayList<ImagePlus> finalDifferentMasks = new ArrayList<ImagePlus>();
-        finalDifferentMasks.add(0, null);
+        for(int i=0; i<Collections.max(differentClassIds);i++) {
+            finalDifferentMasks.add(i, null);
+        }
         for(int i=0; i<differentClassIds.size(); i++) {
             finalDifferentMasks.add(differentClassIds.get(i), IJ.createHyperStack(String.valueOf(differentClassIds.get(i)), (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, 1, 1, 32));
         }
-        //final ImagePlus finalMasks = IJ.createHyperStack("Celulas", (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, nClasses, 1, 32);
+        finalDifferentMasks.add(IJ.createHyperStack("finalMask", (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, 1, 1, 32));
+        //final ImagePlus finalMasks = IJ.createHyperStack("FinalMasks", (int) Math.floor(originalShape[1]), (int) Math.floor(originalShape[0]), 1, nClasses, 1, 32);
         
         // Denormalize the bounding boxes to pixel coordinates in the processing shape
         window = normBoxes(window, processingShape);
@@ -197,10 +201,12 @@ public class PostProcessing implements PostProcessingInterface {
         for (int j = 0; j < classIds.length; ++j) {
             selectedMasks.setPositionWithoutUpdate(1, j+1, 1);
             finalDifferentMasks.get(classIds[j]).setPositionWithoutUpdate(1, 1, 1);
+            finalDifferentMasks.get(finalDifferentMasks.size()-1).setPositionWithoutUpdate(1, 1, 1);
           //  finalMasks.setPositionWithoutUpdate(1 , classIds[j], 1);
             ImageProcessor selectedMaskIp = selectedMasks.getProcessor();
           //  final ImageProcessor finalMaskIp = finalMasks.getProcessor();
-            ImageProcessor finalMaskIp = finalDifferentMasks.get(classIds[j]).getProcessor();
+            ImageProcessor currentMask = finalDifferentMasks.get(classIds[j]).getProcessor();
+            ImageProcessor finalMask = finalDifferentMasks.get(finalDifferentMasks.size()-1).getProcessor();
             
             final int newHeight = scaledBoxes[j][2] - scaledBoxes[j][0];
             final int newWidth = scaledBoxes[j][3] - scaledBoxes[j][1];
@@ -213,7 +219,8 @@ public class PostProcessing implements PostProcessingInterface {
                     ++ySelected;
                     final double val = selectedMaskIp.getPixelValue(xSelected, ySelected);
                     if (val >= 0.5) {
-                        finalMaskIp.putPixelValue(xFinal, yFinal, 1.0);
+                        currentMask.putPixelValue(xFinal, yFinal, 1.0);
+                        finalMask.putPixelValue(xFinal, yFinal, 1.0);
                     }
                 }
             }
@@ -223,14 +230,16 @@ public class PostProcessing implements PostProcessingInterface {
         final HashMap<String, Object> outMap = new HashMap<String, Object>();
         //finalMasks.show();
         for(int i=1; i<finalDifferentMasks.size(); i++) {
-            //Change colors
-            finalDifferentMasks.get(i).setLut(LUT.createLutFromColor(colors.get(i%colors.size())));
-            finalDifferentMasks.get(i).updateAndDraw();
-            //set title in the window
-            if(i==1)
-                finalDifferentMasks.get(i).setTitle("Celulas");
-            finalDifferentMasks.get(i).show();
-            outMap.put(finalDifferentMasks.get(i).getTitle(), finalDifferentMasks.get(i));
+            if(finalDifferentMasks.get(i)!=null) {
+                //Change colors
+                finalDifferentMasks.get(i).setLut(LUT.createLutFromColor(colors.get(i%colors.size())));
+                finalDifferentMasks.get(i).updateAndDraw();
+                //set title in the window
+                if(i==1)
+                    finalDifferentMasks.get(i).setTitle("Celulas");
+                finalDifferentMasks.get(i).show();
+                outMap.put(finalDifferentMasks.get(i).getTitle(), finalDifferentMasks.get(i));
+            }
         }
         
         //selectedMasks.show();
