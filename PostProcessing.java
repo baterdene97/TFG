@@ -168,7 +168,7 @@ public class PostProcessing implements PostProcessingInterface {
         float[] processingShape = str2array(processingShapeString);
         float[] window = str2array(windowString);
         
-        //for each class create hyper stack
+        //Create an array of Imageplus and for each class create hyper stack
         ArrayList<ImagePlus> finalDifferentMasks = new ArrayList<ImagePlus>();
         for(int i=0; i<Collections.max(differentClassIds);i++) {
             finalDifferentMasks.add(i, null);
@@ -231,12 +231,9 @@ public class PostProcessing implements PostProcessingInterface {
         //finalMasks.show();
         for(int i=1; i<finalDifferentMasks.size(); i++) {
             if(finalDifferentMasks.get(i)!=null) {
-                //Change colors
+                //Paint each Imageplus by an color and show the results
                 finalDifferentMasks.get(i).setLut(LUT.createLutFromColor(colors.get(i%colors.size())));
                 finalDifferentMasks.get(i).updateAndDraw();
-                //set title in the window
-                if(i==1)
-                    finalDifferentMasks.get(i).setTitle("Celulas");
                 finalDifferentMasks.get(i).show();
                 outMap.put(finalDifferentMasks.get(i).getTitle(), finalDifferentMasks.get(i));
             }
